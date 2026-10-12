@@ -1,0 +1,65 @@
+/* Colors from the logo: navy modules, an orange clock, a teal event. */
+:root {
+  --fml-navy: #1f2d4d;
+  --fml-orange: #f28c28;
+  --fml-teal: #17b3a3;
+
+  --vp-c-brand-1: #2f56a6;
+  --vp-c-brand-2: #3d66b8;
+  --vp-c-brand-3: #2f56a6;
+  --vp-c-brand-soft: rgba(47, 86, 166, 0.14);
+
+  --vp-home-hero-name-color: transparent;
+  --vp-home-hero-name-background: linear-gradient(120deg, var(--fml-navy) 30%, var(--fml-orange));
+  --vp-home-hero-image-background-image: linear-gradient(-45deg, rgba(242, 140, 40, 0.35) 50%, rgba(23, 179, 163, 0.35) 50%);
+  --vp-home-hero-image-filter: blur(56px);
+}
+
+.dark {
+  --vp-c-brand-1: #8fb0ff;
+  --vp-c-brand-2: #a9c2ff;
+  --vp-c-brand-3: #4d74c7;
+  --vp-c-brand-soft: rgba(143, 176, 255, 0.16);
+  --vp-home-hero-name-background: linear-gradient(120deg, #dfe6f3 30%, var(--fml-orange));
+}
+
+.VPHero .image-src {
+  max-width: 260px;
+  max-height: 260px;
+}
+
+/* The results table on the home page. */
+.fml-results {
+  max-width: 1152px;
+  margin: 0 auto;
+  padding: 48px 24px 0;
+}
+.fml-results h2 {
+  border-top: none;
+  margin-top: 0;
+}
+
+/* Headline numbers on the home page. */
+.fml-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin: 24px 0 8px;
+}
+.fml-stat {
+  border-radius: 12px;
+  padding: 20px 24px;
+  background: var(--vp-c-bg-soft);
+}
+.fml-stat .value {
+  font-size: 44px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--fml-orange);
+}
+.fml-stat .label {
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--vp-c-text-2);
+}
