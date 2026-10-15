@@ -64,9 +64,9 @@ for warning in plan.analysis().warnings() {
 
 `into_sim` fails for a model FML cannot run: more than 64 distinct clock
 configurations, or more than 65,536 timepoints per hyperperiod (the
-message says which); for an
-unbound or twice-bound external port; and, with snapshots configured, for
-an exclusive external port whose source cannot be saved.
+message says which); for a `delta_limit` above 65,534; for an unbound or
+twice-bound external port; and, with snapshots configured, for an
+exclusive external port whose source cannot be saved.
 
 ## While it runs
 
@@ -79,7 +79,8 @@ an exclusive external port whose source cannot be saved.
 | `multi-drive at 10ns+1: A and B both emit to L` | two events for one location and timepoint |
 | `write conflict at 37ns: A and B both write L` | a possible write conflict happened |
 | `dependency cycle among ...` | a block's active members formed a cycle |
-| `more than 1000 delta cycles at 5ns` | a chain of delta cycles that never settles (`delta_limit`) |
+| `more than 30 delta cycles at 5ns` | a chain of delta cycles that never settles (`delta_limit`) |
+| `600000s is after the latest time a run with a delta limit of 30 reaches, ...` | the run went further in time than its `delta_limit` allows ([Delta cycles](./time#delta-cycles)) |
 | `more than N events in flight from one location` | `event_capacity` exceeded |
 | `event delay ... is below min_delay ...` | an emit outside the source's declared delays |
 

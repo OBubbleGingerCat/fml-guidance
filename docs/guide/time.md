@@ -112,6 +112,10 @@ also sets how long after a stop the simulation keeps running
 
 Delta cycles order things within one physical time: a chain of events,
 each sent with `DELTA`, runs as a sequence of timepoints at the same time.
-More than `delta_limit` delta cycles at one time (1000 by default) is an
+More than `delta_limit` delta cycles at one time (30 by default) is an
 error, which catches models that never settle. Set `SimConfig::delta_limit`
-for models that need longer chains.
+for models that need longer chains, up to 65,534.
+
+The limit also sets how far in simulated time a run reaches: about 160
+hours at the default, 5 hours at 1000, 281 seconds at 65,534. A run that
+would go later fails with an error that names the limit.

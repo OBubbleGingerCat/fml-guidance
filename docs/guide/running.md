@@ -27,7 +27,7 @@ let mut sim = plan.into_sim(fml::SimConfig::default())?;
 | `workers` | every hardware thread, up to 64 | the most worker threads; the placement policy may use fewer. Set it to use more than 64 |
 | `overlap` | `true` | let later timepoints start while earlier ones finish, where the model allows; `false` runs one timepoint at a time |
 | `checks` | `false` | check the parallel program when it is built, and record the execution order for `sim.check_trace()`; slow, for tests |
-| `delta_limit` | 1000 | the most delta cycles at one physical time |
+| `delta_limit` | 30 | the most delta cycles at one physical time, at most 65,534; a larger one shortens how far in time a run reaches ([Delta cycles](./time#delta-cycles)) |
 | `stop_delay` | `None` | how long after a stop the simulation runs; `None` is the model's free delay ([Stopping](#stopping)) |
 | `event_capacity` | 2²⁰ | the most events in flight from one source location |
 | `snapshots` | `None` | when and where to take snapshots |

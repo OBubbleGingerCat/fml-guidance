@@ -55,7 +55,7 @@ for warning in plan.analysis().warnings() {
 
 ## 构建仿真时
 
-`into_sim` 在以下情况失败：FML 无法运行的模型，即不同的时钟配置超过 64 种，或者每个超周期的时刻点超过 65,536 个（消息会说明是哪一种）；外部端口没有绑定或绑定了两次；以及配置了快照时，独占的外部端口的源对象不能保存。
+`into_sim` 在以下情况失败：FML 无法运行的模型，即不同的时钟配置超过 64 种，或者每个超周期的时刻点超过 65,536 个（消息会说明是哪一种）；`delta_limit` 超过 65,534；外部端口没有绑定或绑定了两次；以及配置了快照时，独占的外部端口的源对象不能保存。
 
 ## 运行时
 
@@ -68,7 +68,8 @@ for warning in plan.analysis().warnings() {
 | `multi-drive at 10ns+1: A and B both emit to L` | 同一个位置、同一个时刻点上有两个事件 |
 | `write conflict at 37ns: A and B both write L` | 一个可能的写冲突真的发生了 |
 | `dependency cycle among ...` | 一个块中活跃的成员形成了环 |
-| `more than 1000 delta cycles at 5ns` | 一串永远稳定不下来的 delta 周期（`delta_limit`） |
+| `more than 30 delta cycles at 5ns` | 一串永远稳定不下来的 delta 周期（`delta_limit`） |
+| `600000s is after the latest time a run with a delta limit of 30 reaches, ...` | 运行在时间上走得比 `delta_limit` 允许的更远（[delta 周期](./time#delta-cycles)） |
 | `more than N events in flight from one location` | 超出了 `event_capacity` |
 | `event delay ... is below min_delay ...` | 一次发出的延迟不在源声明的延迟之内 |
 

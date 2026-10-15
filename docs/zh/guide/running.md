@@ -22,7 +22,7 @@ let mut sim = plan.into_sim(fml::SimConfig::default())?;
 | `workers` | 全部硬件线程，最多 64 个 | worker 线程数的上限；放置策略可能用得更少。要用 64 个以上就显式设置 |
 | `overlap` | `true` | 在模型允许的地方，让较晚的时刻点在较早的时刻点结束之前就开始；`false` 一次只运行一个时刻点 |
 | `checks` | `false` | 构建并行程序时检查它，并记录执行顺序供 `sim.check_trace()` 使用；慢，用于测试 |
-| `delta_limit` | 1000 | 同一个物理时间上 delta 周期数的上限 |
+| `delta_limit` | 30 | 同一个物理时间上 delta 周期数的上限，最大 65,534；设得越大，一次运行在时间上能走得越短（[delta 周期](./time#delta-cycles)） |
 | `stop_delay` | `None` | stop 之后仿真还运行多久；`None` 表示模型的免费延迟（[停止](#stopping)） |
 | `event_capacity` | 2²⁰ | 来自同一个源位置的在途事件数的上限 |
 | `snapshots` | `None` | 何时、在哪里拍快照 |
