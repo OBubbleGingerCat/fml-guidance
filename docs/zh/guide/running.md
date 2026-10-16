@@ -25,10 +25,11 @@ let mut sim = plan.into_sim(fml::SimConfig::default())?;
 | `delta_limit` | 30 | 同一个物理时间上 delta 周期数的上限，最大 65,534；设得越大，一次运行在时间上能走得越短（[delta 周期](./time#delta-cycles)） |
 | `stop_delay` | `None` | stop 之后仿真还运行多久；`None` 表示模型的免费延迟（[停止](#stopping)） |
 | `event_capacity` | 2²⁰ | 来自同一个源位置的在途事件数的上限 |
+| `fail_on_drop` | `false` | 门控关闭时到达触发端口的事件是错误，而不是被丢弃并计数（[时钟门控](./time#clock-gates)） |
 | `snapshots` | `None` | 何时、在哪里拍快照 |
 | `placement`、`wait`、`steal`、`pin`、`topology` | 内置 | 运行时策略（[性能](./performance)） |
 
-这些字段都不改变结果，只有 `stop_delay`、`delta_limit` 和 `event_capacity` 例外，它们以确定的方式改变结果：给定的值在任何机器、任何 worker 数下都得到同样的结果。
+这些字段都不改变结果，只有 `stop_delay`、`delta_limit`、`event_capacity` 和 `fail_on_drop` 例外，它们以确定的方式改变结果：给定的值在任何机器、任何 worker 数下都得到同样的结果。
 
 ```rust
 let config = fml::SimConfig {
@@ -65,7 +66,7 @@ println!("{}", sim.state(total)?);
 *sim.state_mut(total)? = 0;
 ```
 
-`state` 读一个值；`state_mut` 写一个值，宿主也用它访问 store 和外部端口的源对象。
+`state` 读一个值；`state_mut` 写一个值，宿主也用它访问 store、外部端口的源对象和[时钟门控](./time#clock-gates)。
 
 ## 停止 {#stopping}
 

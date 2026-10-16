@@ -34,6 +34,15 @@ monitor that sums every router's counters on the clock and stops the
 simulation once a goal number of packets has been delivered, which
 exercises [stopping](../guide/running#stopping) in an event-driven model.
 
+## Gated units
+
+Units on gated clocks ([Clock gates](../guide/time#clock-gates)): each
+mixes its state at every run and, after `busy` runs, closes its gate for
+1 to `idle` edges, as many as its state says. One configuration writes
+the gate at every run (one run, one idle edge); the other keeps a unit
+busy for 20 runs and idle for up to 80 edges. The program prints the
+runs, the gated edges and a checksum.
+
 ## What it shows
 
 Every configuration prints a checksum, which every number of workers and

@@ -84,3 +84,64 @@ delta 周期，接收者不能跑到发送者的物理时间前面。请为每�
 delta 周期给同一个物理时间之内的事情定序：一串事件，每个都用 `DELTA` 发出，就作为同一时间的一系列时刻点运行。同一时间超过 `delta_limit` 个 delta 周期（默认 30）是错误，这能抓住永远稳定不下来的模型。需要更长链条的模型，可以设置 `SimConfig::delta_limit`，最大 65,534。
 
 这个上限也决定一次运行在仿真时间上能走多远：默认值下约 160 小时，1000 时约 5 小时，65,534 时约 281 秒。超出这个范围的运行会报错，错误信息里写明上限。
+
+## 时钟门控 {#clock-gates}
+
+一个没有事做的单元可以关掉自己的时钟。它把门控声明为一个状态字段，并在受这个门控控制的触发端口上指明它：
+
+```rust
+#[fml::module]
+pub struct Sm {
+    #[fml::trigger(gate = gate)]
+    pub clock: fml::ClockRelay,
+    #[fml::trigger(gate = gate)]
+    pub request: fml::EventRelay<Request>,
+    #[fml::trigger]
+    pub wake: fml::EventRelay<()>,
+    pub gate: fml::Gate,
+    pub next_work: u64,
+}
+```
+
+受门控的触发端口只在门控打开时触发。门控关闭时的时钟沿不运行 task，也没有开销；如果某个沿上所有受门控的时钟都关着，那里也没有别的事发生，这个沿就根本不是时刻点，`sim.step()` 会跳过它。门控关闭期间到达受门控触发端口的事件被丢弃并计数。没有 `gate =` 的触发端口不受影响，所以一个不受门控的事件可以在门控关闭时运行 task（这时受门控的槽位是 `None`），由它打开门控。
+
+task 以 `&mut fml::Gate` 取得门控：
+
+```rust
+#[fml::task(triggers = (clock, request, wake))]
+fn step(
+    ctx: &mut fml::TaskCtx,
+    gate: &mut fml::Gate,
+    next_work: &mut u64,
+) -> Result<(), fml::SimError> {
+    if ctx.triggered_triggers().2.is_some() {
+        gate.open(); // 被唤醒：从下一个沿起再运行
+        return Ok(());
+    }
+    // ……一个周期的工作，其中设置 `next_work` ……
+    match *next_work {
+        0 => {}                                                    // 忙：保持打开
+        u64::MAX => gate.close(),                                  // 直到被唤醒
+        at => gate.close_until(fml::Timepoint::at(u128::from(at))), // 已知的截止时间
+    }
+    Ok(())
+}
+```
+
+- 写入从下一个时刻点起生效。在当前时刻点内，门控保持触发端口看到的值，`is_open()` 报告的也是这个值。
+- `close_until(t)` 在 `t` 打开门控：在 `t` 或之后到达的事件可以通过，时钟从 `t` 或之后的第一个沿起再运行。`t` 不必是时钟沿。
+- 门控开始时是打开的，或者按复位值：
+  `#[fml::reset(fml::Gate::closed())]`、
+  `#[fml::reset(fml::Gate::closed_until(fml::Timepoint::at(4_000)))]`。
+- `gate.opens()` 是按最后一次写入、门控打开的时刻点（打开时为 `Timepoint::ZERO`，关闭时为 `Timepoint::MAX`）。
+- `gate.gated_edges()` 计门控关闭时的沿，直到当前时刻（含）：受门控的触发端口指定的每个时钟一个计数，按声明顺序。功耗和利用率的统计需要的就是它。
+
+门控、它控制的触发端口和写它的 task 是一体的：
+
+- 门控是模块自己的一个标量状态字段，类型为 `fml::Gate`；
+- 一个门控只控制一个 task 的触发端口，一个 task 受门控的触发端口共用一个门控；
+- 只有这个 task 写门控；其他 task 可以读它。
+
+宏和计划会检查这些规则。
+
+两次运行之间，宿主通过 `sim.state_mut(handle)` 取得门控；它写入的值在下一次运行开始时生效。`sim.gated_edges(handle)` 读取计数。`sim.dropped_events()` 按实例、task 和触发端口列出丢弃的事件，如果有丢弃，仿真被丢弃时会打印一条警告；设了 `SimConfig::fail_on_drop`，第一个被丢弃的事件就是错误。快照带上门控、丢弃事件的计数和被门控的沿，所以恢复后的运行接着计数。

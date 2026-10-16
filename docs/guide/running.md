@@ -30,11 +30,12 @@ let mut sim = plan.into_sim(fml::SimConfig::default())?;
 | `delta_limit` | 30 | the most delta cycles at one physical time, at most 65,534; a larger one shortens how far in time a run reaches ([Delta cycles](./time#delta-cycles)) |
 | `stop_delay` | `None` | how long after a stop the simulation runs; `None` is the model's free delay ([Stopping](#stopping)) |
 | `event_capacity` | 2²⁰ | the most events in flight from one source location |
+| `fail_on_drop` | `false` | an event that reaches a trigger while its gate is closed is an error, rather than dropped and counted ([Clock gates](./time#clock-gates)) |
 | `snapshots` | `None` | when and where to take snapshots |
 | `placement`, `wait`, `steal`, `pin`, `topology` | built in | runtime policies ([Performance](./performance)) |
 
-None of these changes results, except `stop_delay`, `delta_limit` and
-`event_capacity`, which change them deterministically: a given value gives
+None of these changes results, except `stop_delay`, `delta_limit`,
+`event_capacity` and `fail_on_drop`, which change them deterministically: a given value gives
 the same results on any machine and any number of workers.
 
 ```rust
@@ -78,7 +79,7 @@ println!("{}", sim.state(total)?);
 ```
 
 `state` reads a value; `state_mut` writes one, and is also how the host
-reaches stores and external sources.
+reaches stores, external sources and [clock gates](./time#clock-gates).
 
 ## Stopping
 

@@ -119,3 +119,87 @@ for models that need longer chains, up to 65,534.
 The limit also sets how far in simulated time a run reaches: about 160
 hours at the default, 5 hours at 1000, 281 seconds at 65,534. A run that
 would go later fails with an error that names the limit.
+
+## Clock gates
+
+A unit with nothing to do can switch its clock off. It declares a gate as
+a state field and names it on the triggers the gate controls:
+
+```rust
+#[fml::module]
+pub struct Sm {
+    #[fml::trigger(gate = gate)]
+    pub clock: fml::ClockRelay,
+    #[fml::trigger(gate = gate)]
+    pub request: fml::EventRelay<Request>,
+    #[fml::trigger]
+    pub wake: fml::EventRelay<()>,
+    pub gate: fml::Gate,
+    pub next_work: u64,
+}
+```
+
+A gated trigger fires only while its gate is open. A clock edge at which
+the gate is closed does not run the task, and costs nothing; when every
+gated clock at an edge is closed and nothing else happens there, the edge
+is not a timepoint at all, and `sim.step()` passes over it. An event that
+arrives at a gated trigger while the gate is closed is dropped and
+counted. Triggers without `gate =` are not affected, so an ungated event
+can run the task while its gate is closed (its gated slots are then
+`None`) and open the gate.
+
+The task takes the gate as `&mut fml::Gate`:
+
+```rust
+#[fml::task(triggers = (clock, request, wake))]
+fn step(
+    ctx: &mut fml::TaskCtx,
+    gate: &mut fml::Gate,
+    next_work: &mut u64,
+) -> Result<(), fml::SimError> {
+    if ctx.triggered_triggers().2.is_some() {
+        gate.open(); // woken: run again from the next edge
+        return Ok(());
+    }
+    // ... a cycle of work, which sets `next_work` ...
+    match *next_work {
+        0 => {}                                                    // busy: stay open
+        u64::MAX => gate.close(),                                  // until woken
+        at => gate.close_until(fml::Timepoint::at(u128::from(at))), // a known deadline
+    }
+    Ok(())
+}
+```
+
+- A write takes effect from the next timepoint. Within the timepoint the
+  gate keeps the value the triggers saw, which `is_open()` reports.
+- `close_until(t)` opens the gate at `t`: events that arrive at `t` or
+  later pass, and the clock runs again from its first edge at or after
+  `t`. `t` need not be an edge.
+- A gate starts open, or as its reset says:
+  `#[fml::reset(fml::Gate::closed())]`,
+  `#[fml::reset(fml::Gate::closed_until(fml::Timepoint::at(4_000)))]`.
+- `gate.opens()` is the timepoint the gate opens at as last written
+  (`Timepoint::ZERO` when open, `Timepoint::MAX` when closed).
+- `gate.gated_edges()` counts the edges at which the gate was closed, up
+  to and including now: one count per clock the gated triggers name, in
+  the order they are declared. It is what power or utilisation statistics
+  need.
+
+A gate, its triggers and the task that writes it belong together:
+
+- the gate is a scalar state field of the module itself, of type
+  `fml::Gate`;
+- a gate controls the triggers of one task, and a task's gated triggers
+  share one gate;
+- only that task writes the gate; other tasks may read it.
+
+The macros and the plan check these.
+
+Between runs, `sim.state_mut(handle)` gives the host the gate; what it
+writes takes effect when the next run starts. `sim.gated_edges(handle)`
+reads the counts. `sim.dropped_events()` lists the dropped events per
+instance, task and trigger, and dropping the simulation prints a warning
+if there were any; with `SimConfig::fail_on_drop` the first one is an
+error instead. Snapshots carry the gates, the dropped events and the
+gated edges, so a restored run continues the counts.
